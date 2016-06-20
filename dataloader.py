@@ -4,7 +4,7 @@ import sys
 import re
 
 # Silly class to read training/test data from a file
-class dataloader:
+class DataLoader:
     
     def __init__(self, fileName):
         
@@ -26,12 +26,19 @@ class dataloader:
         self.__targets = []
         for line in lines:
             line.replace('\n', '')
+            temp = []
             if re.match('in: ', line):
                 line = re.sub('in: ', '', line)
-                self.__vectors.append([float(i) for i in line.split(' ')])
+                for i in line.split(' '):
+                    if re.match('[0-9]+', i):
+                        temp.append(float(i))
+                self.__vectors.append(temp)
             elif re.match('out: ', line):
                 line = re.sub('out: ', '', line)
-                self.__targets.append([float(i) for i in line.split(' ')])
+                for i in line.split(' '):
+                    if re.match('[0-9]+', i):
+                        temp.append(float(i))
+                self.__targets.append(temp)
             else:
                 message = 'Error: invalid line'
                 sys.exit(message)
@@ -47,12 +54,12 @@ class dataloader:
             
     def getTopology(self):
         
-        return self.topology
+        return self.__topology
         
-    def getNextValue(self):
+    def getNextValues(self):
         
         inputs = self.__vectors[self.__pos]
-        target = self.__targets[self.__pos]
+        targets = self.__targets[self.__pos]
         self.__pos += 1
         
-        return inputs, target
+        return inputs, targets
