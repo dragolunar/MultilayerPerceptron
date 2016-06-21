@@ -66,3 +66,7 @@ class DataLoader:
         self.__pos += 1
         
         return inputs, targets
+        
+    def head(self):
+        
+        self.__pos = 0
