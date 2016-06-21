@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import struct
 import dataloader
 import network
 
@@ -11,13 +12,22 @@ def showVector(label, vector):
         message += str(val) + " "
     print(message)
 
+def scaling(x):
+    
+    # mini-max scaling
+    return (x - 0)/(255 - 0)
+
 
 if __name__ == '__main__':
     
+    MAX_EPOCH = 1
+    LEARNING_RATE = 0.15
+    
     trainData = dataloader.DataLoader('trainingData.txt')
+    #trainData = dataloader.DataLoader('samples_1000.txt', scaling)
 
     topology = trainData.getTopology()
-    myNet = network.Network(topology)
+    myNet = network.Network(topology, LEARNING_RATE)
 
     epochs = 0
     while not trainData.isEof():
@@ -44,7 +54,6 @@ if __name__ == '__main__':
             sys.exit(message)
 
         myNet.backPropagation(targetVector)
-        print('Delta weights: %f' % myNet.layers[-1][0].weights[0].deltaWeight)
 
         # Report how well the training is working, averaged over recent samples
         message = 'Net recent average error:'
@@ -52,4 +61,12 @@ if __name__ == '__main__':
         print(message)
 
     print('')
-    print('Done')
+    print('Training done!')
+    
+    
+    fp = open('weights.bin', 'wb')
+    for layer in myNet.layers:
+        for neuron in layer:
+            for connection in neuron.weights:
+                fp.write(struct.pack('f', connection.weight))
+    fp.close()

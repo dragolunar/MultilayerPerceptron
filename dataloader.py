@@ -6,7 +6,7 @@ import re
 # Silly class to read training/test data from a file
 class DataLoader:
     
-    def __init__(self, fileName):
+    def __init__(self, fileName, scaler=None):
         
         fp = open(fileName, 'r')
         if fp is None:
@@ -31,7 +31,10 @@ class DataLoader:
                 line = re.sub('in: ', '', line)
                 for i in line.split(' '):
                     if re.match('[0-9]+', i):
-                        temp.append(float(i))
+                        if scaler is not None:
+                            temp.append(scaler(float(i)))
+                        else:
+                            temp.append(float(i))
                 self.__vectors.append(temp)
             elif re.match('out: ', line):
                 line = re.sub('out: ', '', line)

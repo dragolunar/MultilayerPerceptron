@@ -13,6 +13,7 @@ class Function(enum.Enum):
     THRESHOLD           = 1
     SIGMOID             = 2
     HYPERBOLIC_TANGENT  = 3
+    RELU                = 4
 
 
 class Connection:
@@ -29,7 +30,7 @@ class Neuron:
     alpha = 0.5 # momentum, multiplier of last deltaWeight, [0.0..n]
     random.seed(datetime.datetime.now())
     
-    def __init__(self, nLinks, index, function=Function.SIGMOID):
+    def __init__(self, nLinks, index, function=Function.SIGMOID, learningRate=None):
         
         self.weights = []
         for i in range(nLinks):
@@ -40,6 +41,9 @@ class Neuron:
         self.function = function
         self.output = 0.0
         self.gradient = 0.0
+        
+        if learningRate is not None:
+            Neuron.eta = learningRate
         
     def __activationFunction(self, x):
         
@@ -52,7 +56,7 @@ class Neuron:
         elif (self.function == Function.SIGMOID):
             result = 1.0/(1.0 + math.exp(-x))
         elif (self.function == Function.HYPERBOLIC_TANGENT):
-            result = (math.exp(2*x) - 1)/(math.exp(2*x) + 1)
+            result = math.tanh(x)
         else:
             message = 'Error: unknown function!'
             sys.exit(message)
@@ -68,7 +72,7 @@ class Neuron:
             result = (1.0 - self.__activationFunction(x))*self.__activationFunction(x)
         elif (self.function == Function.HYPERBOLIC_TANGENT):
             # f'(x) = 1 - f(x)^2
-            result = 1.0 - self.__activationFunction(x)**2
+            result = 1.0 - math.tanh(x)**2
         else:
             message = 'Error: unknown function!'
             sys.exit(message)
@@ -77,19 +81,19 @@ class Neuron:
     # Calculate summation of DOW(Descent of Weight)
     def __sumDOW(self, nextLayer):
         
-        summation = 0.0
+        summ = 0.0
         
-        for i in range(len(nextLayer) - 1):
-            summation += self.weights[i].weight*nextLayer[i].gradient;
-        return summation
+        for i in range(len(nextLayer) - 1): # exclude bias neuron
+            summ += self.weights[i].weight*nextLayer[i].gradient;
+        return summ
         
     def feedForward(self, prevLayer):
         
-        summation = 0.0
+        summ = 0.0
         
         for i in range(len(prevLayer)):
-            summation += prevLayer[i].output*prevLayer[i].weights[self.myIndex].weight
-        self.output = self.__activationFunction(summation)
+            summ += prevLayer[i].output*prevLayer[i].weights[self.myIndex].weight
+        self.output = self.__activationFunction(summ)
         
     # Calculate gradients of output layer
     def calcOutputGradients(self, target):
@@ -110,12 +114,12 @@ class Neuron:
         # in the neurons in the preceding layer
         for i in range(len(prevLayer)):
             neuron = prevLayer[i]
-            #oldDeltaWeight = neuron.weights[self.myIndex].deltaWeight
-            #newDeltaWeight = Neuron.eta*neuron.output*self.gradient*Neuron.alpha*oldDeltaWeight
-            upperDeltaWeight = neuron.weights[self.myIndex].deltaWeight
-            lowerDeltaWeight = upperDeltaWeight*neuron.weights[self.myIndex].weight
+            oldDeltaWeight = neuron.weights[self.myIndex].deltaWeight
+            newDeltaWeight = Neuron.eta*neuron.output*self.gradient + Neuron.alpha*oldDeltaWeight
             
-            #neuron.weights[self.myIndex].deltaWeight = newDeltaWeight
-            #neuron.weights[self.myIndex].weight += newDeltaWeight
-            neuron.weights[self.myIndex].deltaWeight = lowerDeltaWeight
-            neuron.weights[self.myIndex].weight -= Neuron.eta*lowerDeltaWeight*neuron.output
+            neuron.weights[self.myIndex].deltaWeight = newDeltaWeight
+            neuron.weights[self.myIndex].weight += newDeltaWeight
+
+    def getWeight(self):
+        
+        return self.weights

@@ -7,27 +7,30 @@ import neuron
 
 class Network:
     
-    recentAverageSmoothingFactor = 0.1
+    recentAverageSmoothingFactor = 100.0    # Number of training samples to average over
     
-    def __init__(self, topology):
+    def __init__(self, topology, learningRate=None):
         
         self.layers = []
         nLayers = len(topology)
         for layerNum in range(nLayers):
             self.layers.append([])
-            nNeurons = topology[layerNum]
+            nNeurons = topology[layerNum] + 1   # add a bias neuron
             for i in range(nNeurons):
                 if layerNum == len(topology) - 1:
-                    self.layers[layerNum].append(neuron.Neuron(1,i,neuron.Function.SIGMOID))
+                    # There is no forward link at the last layer
+                    self.layers[layerNum].append(neuron.Neuron(0,i,neuron.Function.SIGMOID,learningRate))
                 else:
-                    self.layers[layerNum].append(neuron.Neuron(topology[layerNum+1],i,neuron.Function.SIGMOID))
+                    self.layers[layerNum].append(neuron.Neuron(topology[layerNum+1],i,neuron.Function.HYPERBOLIC_TANGENT,learningRate))
+            # Force the bias node's output to 1.0 (it was the last neuron pushed in this layer)
+            self.layers[layerNum][-1].output = 1.0
                     
         self.error = 0.0
         self.recentAverageError = 0.0
     
     def feedForward(self, inputVector):
         
-        if len(inputVector) != len(self.layers[0]):
+        if len(inputVector) != len(self.layers[0]) - 1: # exclude bias neuron
             message = 'Error: dimension of input vector is not match!'
             sys.exit(message)
             
@@ -37,10 +40,10 @@ class Network:
             
         # Forward propagation
         nLayers = len(self.layers)
-        for layerNum in range(1, nLayers):
+        for layerNum in range(1, nLayers):  # exclude input layer
             prevLayer = self.layers[layerNum-1]
             nNeurons = len(self.layers[layerNum])
-            for i in range(nNeurons):
+            for i in range(nNeurons - 1):   # exclude bias neuron
                 self.layers[layerNum][i].feedForward(prevLayer)
                 
     def backPropagation(self, targetVector):
@@ -50,23 +53,22 @@ class Network:
         
         # Calculate overall net error (RMS of output neuron errors)
         outputLayer = self.layers[-1]
-        for i in range(len(outputLayer)):
+        for i in range(len(outputLayer) - 1):   # exclude bias neuron
             delta = targetVector[i] - outputLayer[i].output
             self.error += delta**2
-        self.error /= len(outputLayer)
-        self.error = math.sqrt(self.error)
+        self.error /= (len(outputLayer) - 1)    # get average error squared
+        self.error = math.sqrt(self.error)      # RMS
         
         # Implement a recent average measurement
         self.recentAverageError = (self.recentAverageError*Network.recentAverageSmoothingFactor + self.error)/(Network.recentAverageSmoothingFactor + 1.0)
         
         # Calculate output layer gradients
-        for i in range(len(outputLayer)):
+        for i in range(len(outputLayer) - 1):   # exclude bias neuron
             outputLayer[i].calcOutputGradients(targetVector[i])
-            outputLayer[i].weights[0].deltaWeight = -(targetVector[i] - outputLayer[i].output)
 
         # Calculate gradients on hidden layers
         nLayers = len(self.layers)
-        for layerNum in range(nLayers-2, -1, -1):
+        for layerNum in range(nLayers-2, 0, -1):
             currLayer = self.layers[layerNum]
             nextLayer = self.layers[layerNum + 1]
 
@@ -80,13 +82,13 @@ class Network:
             prevLayer = self.layers[layerNum - 1]
             
             nNeurons = len(currLayer)
-            for i in range(nNeurons):
+            for i in range(nNeurons - 1):   # exclude bias neuron
                 currLayer[i].updateWeights(prevLayer)
     
     def getResults(self):
         
         results = []
-        for i in range(len(self.layers[-1])):
+        for i in range(len(self.layers[-1]) - 1):   # exclude bias neuron
             results.append(self.layers[-1][i].output)
         return results
         
