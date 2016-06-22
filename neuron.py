@@ -26,8 +26,8 @@ class Connection:
 
 class Neuron:
     
-    eta = 0.15  # overall net learning rate
-    alpha = 0.5 # momentum, multiplier of last deltaWeight, [0.0..n]
+    eta = 0.15  # overall net learning rate [0.0..1.0]
+    alpha = 0.5 # momentum, multiplier of last deltaWeight, [0.0..1.0]
     random.seed(datetime.datetime.now())
     
     def __init__(self, nLinks, index, function=Function.SIGMOID, learningRate=None):
@@ -57,6 +57,11 @@ class Neuron:
             result = 1.0/(1.0 + math.exp(-x))
         elif (self.function == Function.HYPERBOLIC_TANGENT):
             result = math.tanh(x)
+        elif (self.function == Function.RELU):
+            if (x >= 0.0):
+                result = x
+            else:
+                result = 0.0
         else:
             message = 'Error: unknown function!'
             sys.exit(message)
@@ -73,6 +78,11 @@ class Neuron:
         elif (self.function == Function.HYPERBOLIC_TANGENT):
             # f'(x) = 1 - f(x)^2
             result = 1.0 - math.tanh(x)**2
+        elif (self.function == Function.RELU):
+            if (x >= 0.0):
+                result = 1.0
+            else:
+                result = 0.0
         else:
             message = 'Error: unknown function!'
             sys.exit(message)
@@ -98,7 +108,7 @@ class Neuron:
     # Calculate gradients of output layer
     def calcOutputGradients(self, target):
         
-        delta = target - self.output
+        delta = -(target - self.output)
         self.gradient = delta*self.__activationFunctionDerivative(self.output)
         
     # Calculate gradients of each layer
@@ -115,11 +125,20 @@ class Neuron:
         for i in range(len(prevLayer)):
             neuron = prevLayer[i]
             oldDeltaWeight = neuron.weights[self.myIndex].deltaWeight
-            newDeltaWeight = Neuron.eta*neuron.output*self.gradient + Neuron.alpha*oldDeltaWeight
+            # The second term is a momentum to accelerate learning
+            newDeltaWeight = -Neuron.eta*neuron.output*self.gradient + Neuron.alpha*oldDeltaWeight
             
             neuron.weights[self.myIndex].deltaWeight = newDeltaWeight
             neuron.weights[self.myIndex].weight += newDeltaWeight
+            
+    def setOutput(self, y):
+        
+        self.output = y
+            
+    def getOutput(self):
+        
+        return self.output
 
-    def getWeight(self):
+    def getWeights(self):
         
         return self.weights

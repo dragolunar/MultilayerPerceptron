@@ -47,6 +47,7 @@ class DataLoader:
                 sys.exit(message)
         
         self.__pos = 0
+        fp.close()
         
     def isEof(self):
         

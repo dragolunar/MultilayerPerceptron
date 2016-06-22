@@ -7,7 +7,7 @@ import neuron
 
 class Network:
     
-    recentAverageSmoothingFactor = 100.0    # Number of training samples to average over
+    recentAverageSmoothingFactor = 1000.0    # Number of training samples to average over
     
     def __init__(self, topology, learningRate=None):
         
@@ -19,11 +19,11 @@ class Network:
             for i in range(nNeurons):
                 if layerNum == len(topology) - 1:
                     # There is no forward link at the last layer
-                    self.layers[layerNum].append(neuron.Neuron(0,i,neuron.Function.SIGMOID,learningRate))
+                    self.layers[layerNum].append(neuron.Neuron(0,i,neuron.Function.RELU,learningRate))
                 else:
                     self.layers[layerNum].append(neuron.Neuron(topology[layerNum+1],i,neuron.Function.HYPERBOLIC_TANGENT,learningRate))
             # Force the bias node's output to 1.0 (it was the last neuron pushed in this layer)
-            self.layers[layerNum][-1].output = 1.0
+            self.layers[layerNum][-1].setOutput(1.0)
                     
         self.error = 0.0
         self.recentAverageError = 0.0
@@ -36,28 +36,32 @@ class Network:
             
         # Assign the input values into the input layer
         for i in range(len(inputVector)):
-            self.layers[0][i].output = inputVector[i]
+            self.layers[0][i].setOutput(inputVector[i])
             
         # Forward propagation
         nLayers = len(self.layers)
         for layerNum in range(1, nLayers):  # exclude input layer
             prevLayer = self.layers[layerNum-1]
             nNeurons = len(self.layers[layerNum])
-            for i in range(nNeurons - 1):   # exclude bias neuron
+            for i in range(nNeurons - 1):   # exclude bias neuron (it's output is always 1.0)
                 self.layers[layerNum][i].feedForward(prevLayer)
                 
     def backPropagation(self, targetVector):
         
-        # RMSE(Root Mean Square Error)
+        ERROR_TYPE = 'SE'     # SE(Square Error) or RMSE(Root Mean Square Error)
         self.error = 0.0
         
-        # Calculate overall net error (RMS of output neuron errors)
+        # Calculate overall net error (SE of output neuron errors)
         outputLayer = self.layers[-1]
         for i in range(len(outputLayer) - 1):   # exclude bias neuron
-            delta = targetVector[i] - outputLayer[i].output
+            delta = targetVector[i] - outputLayer[i].getOutput()
             self.error += delta**2
-        self.error /= (len(outputLayer) - 1)    # get average error squared
-        self.error = math.sqrt(self.error)      # RMS
+            
+        if ERROR_TYPE == 'SE':
+            self.error /= 2.0
+        elif ERROR_TYPE == 'RMSE':
+            self.error /= (len(outputLayer) - 1)    # get average error squared
+            self.error = math.sqrt(self.error)      # RMS
         
         # Implement a recent average measurement
         self.recentAverageError = (self.recentAverageError*Network.recentAverageSmoothingFactor + self.error)/(Network.recentAverageSmoothingFactor + 1.0)
@@ -89,8 +93,12 @@ class Network:
         
         results = []
         for i in range(len(self.layers[-1]) - 1):   # exclude bias neuron
-            results.append(self.layers[-1][i].output)
+            results.append(self.layers[-1][i].getOutput())
         return results
+        
+    def getRecentError(self):
+        
+        return self.error
         
     def getRecentAverageError(self):
         
