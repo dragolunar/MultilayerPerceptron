@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import struct
 import dataloader
 import network
 
@@ -15,19 +14,21 @@ def showVector(label, vector):
 def scaling(x):
     
     # mini-max scaling
-    return (x - 0)/(255 - 0)
+    result = [(i - 0)/(255 - 0) for i in x]
+    return result
 
 
 if __name__ == '__main__':
     
     MAX_EPOCH = 100
     LEARNING_RATE = 0.15
-    LEAST_ERROR = 0.001
+    LEAST_AVG_ERROR = 0.001
     
-    #trainData = dataloader.DataLoader('trainingData.txt')
-    trainData = dataloader.DataLoader('samples_1000.txt', scaling)
+    #trainData = dataloader.InputData('trainingData.txt')
+    trainData = dataloader.InputData('samples_1000.txt')
     
     topology = trainData.getTopology()
+    sampleSize = trainData.getSampleSize()
     myNet = network.Network(topology, LEARNING_RATE)
     
     print('')
@@ -35,13 +36,14 @@ if __name__ == '__main__':
     print('')
     
     epochs = 0
-    error = 1.0
-    while (epochs < MAX_EPOCH) and (error > LEAST_ERROR):
+    while epochs < MAX_EPOCH:
         
         epochs += 1
         trainData.head()
         print('Epoch: %d' % epochs)
         
+        recentAvgError = 0.0
+        totalError = 0.0
         trainPass = 0
         while not trainData.isEof():
             
@@ -49,10 +51,13 @@ if __name__ == '__main__':
             
             # Get new input data and feed it forward
             inputVector, targetVector = trainData.getNextValues()
+            inputVector = scaling(inputVector)
             if (inputVector is None) or (targetVector is None):
                 break
             
             myNet.feedForward(inputVector)
+            totalError += myNet.getRecentError()
+            recentAvgError = (recentAvgError*sampleSize + myNet.getRecentError())/(sampleSize + 1.0)
             
             # Collect the net's actual results
             outputVector = myNet.getResults()
@@ -70,16 +75,17 @@ if __name__ == '__main__':
             showVector('Inputs: ', inputVector)
             showVector('Outputs: ', outputVector)
             showVector('Targets: ', targetVector)
-            print('Net recent average error: %f' % myNet.getRecentAverageError())
+            print('Net recent average error: %f' % recentAvgError)
             '''
             
-        error = myNet.getRecentError()
-        print('Net error: %f' % error)
+        avgError = totalError/sampleSize
+        print('Net error: %f' % avgError)
+        if avgError < LEAST_AVG_ERROR:
+            break
         
     print('')
     print('Training done!')
     
-    #fp = open('weights.bin', 'wb')
     fp = open('weights.txt', 'w')
     fp.write('topology: ')
     for i in trainData.getTopology():
@@ -87,11 +93,9 @@ if __name__ == '__main__':
         fp.write(out)
     fp.write('\n')
     for n in range(len(myNet.layers)):
-        for j in range(len(myNet.layers[n])):
-            for k in range(len(myNet.layers[n][j].getWeights())):
-                #fp.write(struct.pack('f', myNet.layers[n][j].weights[k].weight))
-                out = '(' + str(n) + ',' + str(j) + ',' + str(k) + '): '
-                out += str(myNet.layers[n][j].weights[k].weight)
-                out += '\n'
+        for k in range(len(myNet.layers[n])):
+            for j in range(len(myNet.layers[n][k].getWeights())):
+                out = str(n) + ' ' + str(k) + ' ' + str(j) + ' '
+                out += str(myNet.layers[n][k].weights[j].weight) + '\n'
                 fp.write(out)
     fp.close()

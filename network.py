@@ -7,8 +7,6 @@ import neuron
 
 class Network:
     
-    recentAverageSmoothingFactor = 1000.0    # Number of training samples to average over
-    
     def __init__(self, topology, learningRate=None):
         
         self.layers = []
@@ -24,10 +22,9 @@ class Network:
                     self.layers[layerNum].append(neuron.Neuron(topology[layerNum+1],i,neuron.Function.HYPERBOLIC_TANGENT,learningRate))
             # Force the bias node's output to 1.0 (it was the last neuron pushed in this layer)
             self.layers[layerNum][-1].setOutput(1.0)
-                    
+            
         self.error = 0.0
-        self.recentAverageError = 0.0
-    
+        
     def feedForward(self, inputVector):
         
         if len(inputVector) != len(self.layers[0]) - 1: # exclude bias neuron
@@ -56,16 +53,12 @@ class Network:
         for i in range(len(outputLayer) - 1):   # exclude bias neuron
             delta = targetVector[i] - outputLayer[i].getOutput()
             self.error += delta**2
-            
         if ERROR_TYPE == 'SE':
             self.error /= 2.0
         elif ERROR_TYPE == 'RMSE':
             self.error /= (len(outputLayer) - 1)    # get average error squared
             self.error = math.sqrt(self.error)      # RMS
-        
-        # Implement a recent average measurement
-        self.recentAverageError = (self.recentAverageError*Network.recentAverageSmoothingFactor + self.error)/(Network.recentAverageSmoothingFactor + 1.0)
-        
+            
         # Calculate output layer gradients
         for i in range(len(outputLayer) - 1):   # exclude bias neuron
             outputLayer[i].calcOutputGradients(targetVector[i])
@@ -100,6 +93,8 @@ class Network:
         
         return self.error
         
-    def getRecentAverageError(self):
+    def setWeights(self, weights):
         
-        return self.recentAverageError
+        for n in range(len(self.layers) - 1):   # ignore output layer
+            for k in range(len(self.layers[n])):
+                self.layers[n][k].setWeights(weights[n][k])

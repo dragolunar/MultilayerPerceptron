@@ -142,3 +142,8 @@ class Neuron:
     def getWeights(self):
         
         return self.weights
+        
+    def setWeights(self, weights):
+        
+        for i in range(len(weights)):
+            self.weights[i].weight = weights[i]
