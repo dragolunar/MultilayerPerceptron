@@ -1,4 +1,4 @@
-topology: 3 3 3
+topology: 3 3
 in: 36 2 199
 out: 0 0 1
 in: 231 244 201

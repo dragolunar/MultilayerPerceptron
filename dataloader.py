@@ -9,7 +9,7 @@ class InputData:
     def __init__(self, fileName):
         
         self.__topology = []
-        self.__vectors = []
+        self.__inputs = []
         self.__targets = []
         self.__pos = 0
         
@@ -40,7 +40,7 @@ class InputData:
                 for i in line.split(' '):
                     if re.match('[0-9]+', i):
                         temp.append(float(i))
-                self.__vectors.append(temp)
+                self.__inputs.append(temp)
             elif re.match('out: ', line):
                 line = re.sub('out: ', '', line)
                 for i in line.split(' '):
@@ -53,7 +53,7 @@ class InputData:
                 
     def isEof(self):
         
-        if len(self.__vectors) == self.__pos:
+        if len(self.__inputs) == self.__pos:
             return True
         else:
             return False
@@ -64,11 +64,11 @@ class InputData:
         
     def getSampleSize(self):
         
-        return len(self.__vectors)
+        return len(self.__inputs)
         
     def getNextValues(self):
         
-        inputs = self.__vectors[self.__pos]
+        inputs = self.__inputs[self.__pos]
         targets = self.__targets[self.__pos]
         self.__pos += 1
         

@@ -39,19 +39,23 @@ def showVector(label, vector):
 
 def showColorSpace(samples, colors=None):
     
-    for i in range(len(samples)):
-        xyY = rgb2xyy(scaling(samples[i]))
-        if colors is not None:
-            plt.scatter(xyY[0], xyY[1], c=colors[i])
-        else:
-            r, g, b = samples[i][0], samples[i][1], samples[i][2]
-            plt.scatter(xyY[0], xyY[1], c='#%02x%02x%02x'%(r,g,b))
-            
     plt.title('scatterplot')
     plt.xlabel('x')
     plt.ylabel('y')
     plt.xlim([0.0,0.7])
     plt.ylim([0.0,0.7])
+    
+    for i in range(len(samples)):
+        xyY = rgb2xyy(scaling(samples[i]))
+        if colors is not None:
+            plt.scatter(xyY[0], xyY[1], c=colors[i])
+        else:
+            r = int(samples[i][0])
+            g = int(samples[i][1])
+            b = int(samples[i][2])
+            plt.scatter(xyY[0], xyY[1], c='#%02x%02x%02x'%(r,g,b))
+        #plt.pause(0.001)
+        
     plt.show()
 
 
@@ -79,7 +83,7 @@ if __name__ == '__main__':
         testPass += 1
         
         inputVector, targetVector = testData.getNextValues()
-        myNet.feedForward(inputVector)
+        myNet.feedForward(scaling(inputVector))
         outputVector = myNet.getResults()
         
         # Report how well the training is working, averaged over recent samples
@@ -92,12 +96,13 @@ if __name__ == '__main__':
         '''
         
         color = outputVector.index(max(outputVector))
+        #color = targetVector.index(max(targetVector))
         if color == 0:
             colors.append('r')
         elif color == 1:
             colors.append('g')
-        else:
+        elif color == 2:
             colors.append('b')
         inputs.append(inputVector)
-            
+        
     showColorSpace(inputs, colors)

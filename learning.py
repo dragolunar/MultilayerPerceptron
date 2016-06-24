@@ -20,7 +20,7 @@ def scaling(x):
 
 if __name__ == '__main__':
     
-    MAX_EPOCH = 100
+    MAX_EPOCH = 1000
     LEARNING_RATE = 0.15
     LEAST_AVG_ERROR = 0.001
     
@@ -51,11 +51,10 @@ if __name__ == '__main__':
             
             # Get new input data and feed it forward
             inputVector, targetVector = trainData.getNextValues()
-            inputVector = scaling(inputVector)
             if (inputVector is None) or (targetVector is None):
                 break
             
-            myNet.feedForward(inputVector)
+            myNet.feedForward(scaling(inputVector))
             totalError += myNet.getRecentError()
             recentAvgError = (recentAvgError*sampleSize + myNet.getRecentError())/(sampleSize + 1.0)
             
@@ -92,10 +91,14 @@ if __name__ == '__main__':
         out = str(i) + ' '
         fp.write(out)
     fp.write('\n')
-    for n in range(len(myNet.layers)):
-        for k in range(len(myNet.layers[n])):
-            for j in range(len(myNet.layers[n][k].getWeights())):
+    
+    layers = myNet.getLayers()
+    for n in range(len(layers)):
+        neurons = layers[n]
+        for k in range(len(neurons)):
+            weights = neurons[k].getWeights()
+            for j in range(len(weights)):
                 out = str(n) + ' ' + str(k) + ' ' + str(j) + ' '
-                out += str(myNet.layers[n][k].weights[j].weight) + '\n'
+                out += str(weights[j].weight) + '\n'
                 fp.write(out)
     fp.close()
