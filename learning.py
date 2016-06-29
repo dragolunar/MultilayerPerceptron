@@ -20,12 +20,13 @@ def scaling(x):
 
 if __name__ == '__main__':
     
-    MAX_EPOCH = 1000
-    LEARNING_RATE = 0.15
+    MAX_EPOCH = 100
+    LEARNING_RATE = 0.01
     LEAST_AVG_ERROR = 0.001
     
     #trainData = dataloader.InputData('trainingData.txt')
     trainData = dataloader.InputData('samples_1000.txt')
+    #trainData = dataloader.InputData('mnist_train.txt')
     
     topology = trainData.getTopology()
     sampleSize = trainData.getSampleSize()
@@ -40,12 +41,13 @@ if __name__ == '__main__':
         
         epochs += 1
         trainData.head()
+        trainData.shuffle()
         print('Epoch: %d' % epochs)
         
         recentAvgError = 0.0
         totalError = 0.0
         trainPass = 0
-        while not trainData.isEof():
+        while not trainData.isEof() and trainPass < 1001:
             
             trainPass += 1
             
@@ -55,6 +57,7 @@ if __name__ == '__main__':
                 break
             
             myNet.feedForward(scaling(inputVector))
+            #myNet.feedForward(inputVector)
             totalError += myNet.getRecentError()
             recentAvgError = (recentAvgError*sampleSize + myNet.getRecentError())/(sampleSize + 1.0)
             

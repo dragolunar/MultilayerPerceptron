@@ -19,7 +19,7 @@ class Network:
             for i in range(nNeurons):
                 if layerNum == len(topology) - 1:
                     # There is no forward link at the last layer
-                    self.__layers[layerNum].append(neuron.Neuron(0,i,neuron.Function.RELU,learningRate))
+                    self.__layers[layerNum].append(neuron.Neuron(0,i,neuron.Function.SIGMOID,learningRate))
                 else:
                     self.__layers[layerNum].append(neuron.Neuron(topology[layerNum+1],i,neuron.Function.HYPERBOLIC_TANGENT,learningRate))
             # Force the bias node's output to 1.0 (it was the last neuron pushed in this layer)

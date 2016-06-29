@@ -58,6 +58,62 @@ def showColorSpace(samples, colors=None):
         
     plt.show()
 
+def calcConfMat(targets, outputs):
+    
+    #confMat = [[0]*len(labels)]*len(labels)    # error
+    confMat = [[0 for j in range(len(targets[0]))] for k in range(len(targets[0]))]
+    for i in range(len(targets)):
+        idx_gt = targets[i].index(max(targets[i]))
+        idx_est = outputs[i].index(max(outputs[i]))
+        confMat[idx_gt][idx_est] += 1
+    return confMat
+
+def showConfMat(labels, targets, outputs):
+    
+    confMat = calcConfMat(targets, outputs)
+    
+    # show confusion matrix
+    print('')
+    out_str = '%-8s|' % ''
+    for j in range(len(labels)):
+        out_str += '%8s|' % labels[j]
+    print(out_str)
+    
+    for j in range(len(confMat)):
+        out_str = '%-8s|' % labels[j]
+        for k in range(len(confMat[j])):
+            out_str += '%8s|' % confMat[j][k]
+        print(out_str)
+
+def showReport(labels, targets, outputs):
+    
+    confMat = calcConfMat(targets, outputs)
+    
+    tp = [0]*len(labels)
+    fn = [0]*len(labels)
+    fp = [0]*len(labels)
+    for j in range(len(confMat)):
+        for k in range(len(confMat[j])):
+            if j == k:
+                tp[j] += confMat[j][k]
+            else:
+                fn[j] += confMat[j][k]
+                fp[k] += confMat[j][k]
+                
+    # show report
+    print('')
+    out_str = '%-8s| precision|    recall|' % ''
+    print(out_str)
+    for j in range(len(labels)):
+        precision = float(tp[j])/(float(tp[j]) + float(fp[j]))
+        recall = float(tp[j])/(float(tp[j]) + float(fn[j]))
+        out_str = '%-8s|%0.8f|%0.8f|' % (labels[j], precision, recall)
+        print(out_str)
+    avg_precision = float(sum(tp))/(float(sum(tp)) + float(sum(fp)))
+    avg_recall = float(sum(tp))/(float(sum(tp)) + float(sum(fn)))
+    out_str = 'average |%0.8f|%0.8f|' % (avg_precision, avg_recall)
+    print(out_str)
+
 
 if __name__ == '__main__':
     
@@ -78,6 +134,8 @@ if __name__ == '__main__':
     testPass = 0
     inputs = []
     colors = []
+    targets = []
+    outputs = []
     while not testData.isEof():
         
         testPass += 1
@@ -96,13 +154,21 @@ if __name__ == '__main__':
         '''
         
         color = outputVector.index(max(outputVector))
-        #color = targetVector.index(max(targetVector))
+        #color = outputVector.index(max(targetVector))
+        target = targetVector.index(max(targetVector))
         if color == 0:
             colors.append('r')
         elif color == 1:
             colors.append('g')
         elif color == 2:
             colors.append('b')
+        if color != target:
+            colors[testPass - 1] = 'w'
         inputs.append(inputVector)
+        targets.append(targetVector)
+        outputs.append(outputVector)
         
+    labels = ['RED', 'GREEN', 'BLUE']
     showColorSpace(inputs, colors)
+    showConfMat(labels, targets, outputs)
+    showReport(labels, targets, outputs)

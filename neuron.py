@@ -11,9 +11,10 @@ class Function(enum.Enum):
 
     NONE                = 0
     THRESHOLD           = 1
-    SIGMOID             = 2
-    HYPERBOLIC_TANGENT  = 3
-    RELU                = 4
+    LINEAR              = 2
+    SIGMOID             = 3
+    HYPERBOLIC_TANGENT  = 4
+    RELU                = 5
 
 
 class Connection:
@@ -53,6 +54,8 @@ class Neuron:
                 result = 1.0
             else:
                 result = 0.0
+        elif (self.__function == Function.LINEAR):
+            result = x
         elif (self.__function == Function.SIGMOID):
             result = 1.0/(1.0 + math.exp(-x))
         elif (self.__function == Function.HYPERBOLIC_TANGENT):
@@ -72,6 +75,8 @@ class Neuron:
         result = 0.0
         if (self.__function == Function.THRESHOLD):
             result = 0.0
+        elif (self.__function == Function.LINEAR):
+            result = 1.0
         elif (self.__function == Function.SIGMOID):
             # f'(x) = (1 - f(x))*f(x)
             result = (1.0 - x)*x    # argument x (output of the neuron) comes from activation function

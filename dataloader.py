@@ -2,9 +2,13 @@
 
 import sys
 import re
+import random
+import datetime
 
 # Silly class to read training/test data from a file
 class InputData:
+    
+    random.seed(datetime.datetime.now())    # initialize random seed
     
     def __init__(self, fileName):
         
@@ -66,6 +70,10 @@ class InputData:
         
         return len(self.__inputs)
         
+    def getSamples(self):
+        
+        return self.__inputs, self.__targets
+        
     def getNextValues(self):
         
         inputs = self.__inputs[self.__pos]
@@ -77,6 +85,19 @@ class InputData:
     def head(self):
         
         self.__pos = 0
+        
+    def shuffle(self):
+        
+        indices = list(range(len(self.__inputs)))
+        random.shuffle(indices)
+        
+        temp_inputs = []
+        temp_targets = []
+        for index in indices:
+            temp_inputs.append(self.__inputs[index])
+            temp_targets.append(self.__targets[index])
+        self.__inputs = temp_inputs
+        self.__targets = temp_targets
 
 
 class WeightData:
